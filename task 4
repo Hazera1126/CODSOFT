@@ -1,0 +1,82 @@
+import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
+
+class Question {
+    String question;
+    String[] options;
+    int correctAnswer;
+
+    public Question(String question, String[] options, int correctAnswer) {
+        this.question = question;
+        this.options = options;
+        this.correctAnswer = correctAnswer;
+    }
+}
+
+public class QuizApp {
+    private static final int QUESTION_TIME_LIMIT = 10; // seconds
+    private static Scanner scanner = new Scanner(System.in);
+    private static int score = 0;
+
+    public static void main(String[] args) {
+        Question[] questions = new Question[] {
+            new Question("What is the capital of France?", new String[]{"1. Paris", "2. London", "3. Berlin", "4. Madrid"}, 1),
+            new Question("Which planet is known as the Red Planet?", new String[]{"1. Earth", "2. Mars", "3. Jupiter", "4. Saturn"}, 2),
+            new Question("What is the largest ocean on Earth?", new String[]{"1. Atlantic", "2. Indian", "3. Arctic", "4. Pacific"}, 4)
+        };
+
+        for (int i = 0; i < questions.length; i++) {
+            presentQuestion(questions[i], i + 1);
+        }
+
+        displayResults(questions);
+    }
+
+    private static void presentQuestion(Question question, int questionNumber) {
+        System.out.println("Question " + questionNumber + ": " + question.question);
+        for (String option : question.options) {
+            System.out.println(option);
+        }
+
+        Timer timer = new Timer();
+        TimerTask task = new TimerTask() {
+            public void run() {
+                System.out.println("\nTime's up!");
+                synchronized (scanner) {
+                    scanner.notify();
+                }
+            }
+        };
+
+        timer.schedule(task, QUESTION_TIME_LIMIT * 1000);
+        long startTime = System.currentTimeMillis();
+
+        synchronized (scanner) {
+            try {
+                scanner.wait(QUESTION_TIME_LIMIT * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        timer.cancel();
+        long endTime = System.currentTimeMillis();
+
+        if ((endTime - startTime) < QUESTION_TIME_LIMIT * 1000) {
+            System.out.print("Your answer: ");
+            int answer = scanner.nextInt();
+            if (answer == question.correctAnswer) {
+                score++;
+                System.out.println("Correct!");
+            } else {
+                System.out.println("Incorrect!");
+            }
+        }
+    }
+
+    private static void displayResults(Question[] questions) {
+        System.out.println("\nQuiz Over!");
+        System.out.println("Your final score is: " + score + "/" + questions.length);
+    }
+}
